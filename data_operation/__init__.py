@@ -22,6 +22,9 @@ def create_telemerty_data(data_file='data.csv'):
 def update_telemerty_data(data, data_file='data.csv'):
     ''' Добавляет данные в существующий CSV файл
     '''
+    cpu_usage, ram_free, network_usage = data
+    
+    
     folder_name = os.path.abspath(os.path.join('telemetry',datetime.now().strftime('%d-%m-%Y')))
     file_path = os.path.join(folder_name, data_file)
     
@@ -33,13 +36,13 @@ def update_telemerty_data(data, data_file='data.csv'):
 
     with open(file_path, mode="a", encoding='utf-8') as w_file:
         file_writer = csv.writer(w_file, delimiter = ",", lineterminator="\r")
-        for net_adaptor in list(data.network_usage.keys()):
+        for net_adaptor in list(network_usage.keys()):
             file_writer.writerow([datetime.now(),
-                                  round(float(data.cpu_usage)),
-                                  round(float(data.ram_free)),
+                                  round(float(cpu_usage)),
+                                  round(float(ram_free)),
                                   net_adaptor,
-                                  round(float(data.network_usage[net_adaptor]["up"])),
-                                  round(float(data.network_usage[net_adaptor]["down"]))])
+                                  round(float(network_usage[net_adaptor]["up"])),
+                                  round(float(network_usage[net_adaptor]["down"]))])
 
 def create_channel_record_data(data_file='channel_record_telemetry.csv'):
     '''Создает пустой CSV файл в пепке хранения телеметрии

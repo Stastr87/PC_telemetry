@@ -8,7 +8,6 @@ from tabulate import tabulate
 from async_hardware_monitor import HardWareMonitor
 import data_operation
 
-
 def print_progress_bar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
     """
     Call in a loop to create terminal progress bar
@@ -30,91 +29,57 @@ def print_progress_bar (iteration, total, prefix = '', suffix = '', decimals = 1
 
     return bar_body
 
+def get_output_hw_data():
+    # Получим данные из длительной задачи
+    result = HardWareMonitor().to_dict()
 
-# def get_data_for_show():
-#     date = datetime.now().strftime('%d-%m-%Y')
-#     file_path = os.path.abspath(os.path.join('telemetry',date,'data.csv'))
-#     text_list = []
-#     with open(file_path, encoding='utf-8') as r_file:
-#         for line in r_file:
-#             line = line.split(",", 2)
-#             text_list.append(" ".join(line))
-#     return text_list
+    # Сохраним данные в CSV
+    data = round(result['ram_free']), round(result['cpu_usage']), result['network_usage']
+    data_operation.create_telemerty_data()
+    data_operation.update_telemerty_data(data)
 
-def get_hardware_telemerty():
-    '''Сохраняет CSV файл с данными по потреблению ресурсов ПК
-    
-    Этот код выполняется 5 секунд, если не передано другое значение в класс HardWareMonitor()
-    Параметр monitor_period=5
-    '''
-    ram_free, cpu_usage, network_usage = None, None, None
-
-    data = HardWareMonitor()
-    if (data.ram_free and 
-       data.cpu_usage and
-       network_usage):
-        network_usage = data.network_usage
-        # Сохраняем данные в CSV
-        data_operation.create_telemerty_data()
-        data_operation.update_telemerty_data(data)
-        ram_free, cpu_usage, network_usage = (round(data.ram_free), 
-                                             round(data.cpu_usage), 
-                                             network_usage)
-    
-
-    return ram_free, cpu_usage, network_usage
-
-def get_canvas_data():
-    #Получаем данные для отображения
+    #Подготавливаем строки для отображения на холсте
+    ram_data, cpu_data, network_usage_data = data
+    normilize_str = lambda x: str(x) if len(str(x)) > 1 else f'0{x}'
+    otput_ram_info_str = f'RAM usage (RAM free {normilize_str(ram_data)}%)   {print_progress_bar(100-ram_data, 100, length=30)}'
+    cpu_info_ouput_str = f'CPU usage {normilize_str(cpu_data)}%              {print_progress_bar(cpu_data, 100, length=30)}'
         
-        pc_name = f'Host name: {socket.gethostname()}' # Получим имя ПК
-        cur_date_time = f"Current date/time {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"
+    network_info = []
+    for net_adapter in network_usage_data:
+        if network_usage_data[net_adapter]['up']>1 or network_usage_data[net_adapter]['down']:
+            network_info.append([net_adapter,
+                                 round(network_usage_data[net_adapter]['down']*0.000008,2),
+                                 round(network_usage_data[net_adapter]['up']*0.000008,2)])
+    # Создаим таблицу для отображения данных сетевых интерфейсов
+    headers = ['Net adater', 'DOWNLOAD, Mbit/sec', 'UPLOAD, Mbit/sec']
+    net_adapters_table_object = tabulate(network_info, headers, tablefmt="github")
 
-        ram_data, cpu_data, network_usage_data = get_hardware_telemerty()
-        print(f'get_canvas_data() -> {ram_data, cpu_data, network_usage_data}')
-        
-        if not ram_data:
-             ram_data = 0
-        #Подготавливаем строки для отображения на холсте
-        normilize_str = lambda x: str(x) if len(str(x)) > 1 else f'0{x}'
-        otput_ram_info_str = f'RAM usage (RAM free {normilize_str(ram_data)}%)   {print_progress_bar(100-ram_data, 100, length=30)}'
-        
-        if not cpu_data:
-             cpu_data = 0
-        cpu_info_ouput_str = f'CPU usage {normilize_str(cpu_data)}%              {print_progress_bar(cpu_data, 100, length=30)}'
-        
-        if network_usage_data:
-            network_info = []
-            for net_adapter in network_usage_data:
-                if network_usage_data[net_adapter]['up']>1 or network_usage_data[net_adapter]['down']:
-                    network_info.append([net_adapter,
-                                         round(network_usage_data[net_adapter]['down']*0.000008,2),
-                                         round(network_usage_data[net_adapter]['up']*0.000008,2)])
-            # Создаим таблицу для отображения данных сетевых интерфейсов
-            headers = ['Net adater', 'DOWNLOAD, Mbit/sec', 'UPLOAD, Mbit/sec']
-            net_adapters_table_object = tabulate(network_info, headers, tablefmt="github")
-            # Условно разделим холст на блоки 
-            display_map={"pc_name": pc_name, 
-                         "cur_date_time":cur_date_time,
-                         "ram_info":otput_ram_info_str,
-                         "cpu_info":cpu_info_ouput_str,
-                         "net_usage":net_adapters_table_object
-                        }
-        # Если данные по сети не получены, то исключаем их из списка блоков
-        if not network_usage_data:
-            display_map={"pc_name": pc_name, 
-                         "cur_date_time":cur_date_time,
-                         "ram_info":otput_ram_info_str,
-                         "cpu_info":cpu_info_ouput_str,
-                        }
+    # Условно разделим холст на блоки 
+    output_hw_data = {"ram_info":otput_ram_info_str,
+                      "cpu_info":cpu_info_ouput_str,
+                      "net_usage":net_adapters_table_object
+                      }
 
-        
-        return display_map
+    return output_hw_data
 
 def get_txt():
+    display_map = {"pc_name":'', 
+                   "cur_date_time":'',
+                   "ram_info":'',
+                   "cpu_info":'',
+                   "net_usage":''
+                    }
     
-    map = get_canvas_data()
+    pc_name = f'Host name: {socket.gethostname()}' # Получим имя ПК
+    cur_date_time = f"Current date/time {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}"
+    
+    display_map.update({"pc_name":pc_name, 
+                        "cur_date_time":cur_date_time,})
+    
+    display_map.update(get_output_hw_data())
+    
     txt = str()
-    for block in map:
-          txt+=map[block]+'\n'
+    for block in display_map:
+          txt += f"{display_map[block]}\n\n"
+
     return txt

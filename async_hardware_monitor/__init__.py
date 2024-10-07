@@ -20,8 +20,8 @@ class HardWareMonitor():
 
     def to_dict(self):
         return {"ram_free":self.ram_free,
-                "cpu_usage":self.cpu_usage,
-                "network_usage":self.network_usage}
+                "cpu_usage":self.cpu_usage[0],
+                "network_usage":self.network_usage[0]}
 
     
     async def wait_data(self):
@@ -53,12 +53,12 @@ class HardWareMonitor():
         ''' Задает: 
             атрибут класса - нагрузка ЦП за указанный промежуток времени cpu_usage
         '''
-        print(f"get_cpu_usage called {time.strftime('%X')}")
+        # print(f"get_cpu_usage called {time.strftime('%X')}")
         # Статиска потребления ЦП требует временного лага
         # await asyncio.sleep(self.monitor_period)
         cpu_usage = psutil.cpu_percent(interval=self.monitor_period)
-        print (f'cpu_usage {cpu_usage}')
-        print(f"get_cpu_usage finished {time.strftime('%X')}")
+        # print (f'cpu_usage {cpu_usage}')
+        # print(f"get_cpu_usage finished {time.strftime('%X')}")
         return cpu_usage
 
 
@@ -66,7 +66,7 @@ class HardWareMonitor():
         ''' Задает:
             атрибут класса - статискика передачи данных всех сетевых интерфейсов network_usage
         '''
-        print(f"get_network_usage called {time.strftime('%X')}")
+        # print(f"get_network_usage called {time.strftime('%X')}")
         # Статистика сети
         previous_state = {"data":psutil.net_io_counters(pernic=True),
                           "timestamp":datetime.now()}
@@ -86,6 +86,6 @@ class HardWareMonitor():
             network_usage.update({adapter:{"up":up,
                                            "down":down}})
 
-        print(f'network_usage::: {network_usage}')
-        print(f"get_network_usage finished {time.strftime('%X')}")
+        # print(f'network_usage::: {network_usage}')
+        # print(f"get_network_usage finished {time.strftime('%X')}")
         return network_usage

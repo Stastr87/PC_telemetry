@@ -47,7 +47,7 @@ def draw(canvas):
                 if row==0 or row==1:
                     canvas.addstr(row+1, main_offset+round(min_width/2)-round(len(rows[row])/2), rows[row])
                 else:
-                    canvas.addstr(row+3, main_offset, rows[row])
+                    canvas.addstr(row+1, main_offset, rows[row])
 
         canvas.refresh()
         # time.sleep(1)
